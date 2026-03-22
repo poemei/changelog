@@ -1,5 +1,5 @@
 # Changelog
-*Aa Changelog Addon Module for the Chaos MVC*
+*A Changelog Addon Module for the Chaos MVC*
 
 ![PHP](https://img.shields.io/badge/PHP-8%2B-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-MVC-darkgreen)
