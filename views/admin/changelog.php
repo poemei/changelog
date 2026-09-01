@@ -1,5 +1,5 @@
 <?php require APPROOT . '/views/inc/head.php'; ?>
-<p><small><A href="/admin">Admin</a> >> <strong>Announcements</strong></small></p>
+<p><small><A href="/admin">Admin</a> >> <strong>Changelog</strong></small></p>
 <style>
     .cl-container { font-family: sans-serif; max-width: 1000px; margin: 0 auto; color: #333; }
     .cl-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
