@@ -1,45 +1,34 @@
 <?php
 
-/**
- * Path: /app/models/changelog_model.php
- * * @author [AI: Gemini | 2026-03-18 23:22 UTC]
- * * @approved [Human: P.Mei | 2026-03-18 23:22 UTC];
- */
+declare(strict_types=1);
 
-class changelog_model extends model
+/* [AI:GPT-5.6 | 2026-09-01 05:00:00 UTC] */
+final class changelog_model extends model
 {
-    public function get_all_updates()
+    private const TABLE = 'changelog';
+
+    public function getAllUpdates(): array
     {
-        return $this->fetchAll("SELECT * FROM changelog ORDER BY date_released DESC, id DESC");
+        return $this->fetchAll('SELECT * FROM `changelog` ORDER BY `date_released` DESC, `id` DESC');
     }
 
-    public function get_by_id(int $id)
+    public function getById(int $id)
     {
-        // fetch() returns the single associative array the view needs
-        return $this->fetch("SELECT * FROM changelog WHERE id = ?", [$id]);
+        return $this->fetch('SELECT * FROM `changelog` WHERE `id` = :id LIMIT 1', ['id' => $id]);
     }
 
-    public function remove(int $id)
+    public function deleteUpdate(int $id): void
     {
-        return $this->query("DELETE FROM changelog WHERE id = ?", [$id]);
+        $this->query('DELETE FROM `changelog` WHERE `id` = :id', ['id' => $id]);
     }
 
-    public function save(array $post)
+    public function saveUpdate(array $data, ?int $id): void
     {
-        $payload = [
-            'version'       => $post['version'],
-            'category'      => $post['category'] ?? 'maintenance',
-            'description'   => $post['description'],
-            'date_released' => $post['date_released'] ?? date('Y-m-d')
-        ];
-
-        if (!empty($post['id'])) {
-            return $this->query(
-                "UPDATE changelog SET version = ?, category = ?, description = ?, date_released = ? WHERE id = ?",
-                [$payload['version'], $payload['category'], $payload['description'], $payload['date_released'], (int)$post['id']]
-            );
+        if ($id === null) {
+            $this->insert(self::TABLE, $data);
+            return;
         }
-
-        return $this->insert('changelog', $payload);
+        $this->update(self::TABLE, $data, 'id = :record_id', ['record_id' => $id]);
     }
 }
+/* [End AI:GPT-5.6] */

@@ -1,71 +1,92 @@
 <?php
 
-/**
- * Path: /app/controllers/changelog.php
- * * @author [AI: Gemini | 2026-03-18 23:22 UTC]
- * * @approved [Human: P.Mei | 2026-03-18 23:22 UTC];
- */
+declare(strict_types=1);
 
-class changelog extends controller
+/* [AI:GPT-5.6 | 2026-09-01 05:00:00 UTC] */
+final class changelog extends controller
 {
-    /**
-     * Public-facing changelog index.
-     */
-    public function index($url = [])
+    private const ADMIN_ACTIONS = ['save', 'delete'];
+
+    public function index(array $params = []): void
     {
         $model = $this->model('changelog_model');
-        $data['updates'] = $model->get_all_updates(); 
-        $this->view('public/changelog/index', $data);
+        $this->view('index', ['updates' => $model->getAllUpdates()]);
     }
 
-    /**
-     * Admin management for changelog entries.
-     */
-    public function admin($params = [])
+    public function admin(array $params = []): void
     {
-        $util = new utility(); 
-        
-        if (!isset($_SESSION['user_level']) || $_SESSION['user_level'] < 7) {
-            header("Location: /auth/login");
-            exit;
-        }
-
+        $this->require_admin(7);
         $model = $this->model('changelog_model');
 
-        // HANDLE POST FIRST (this is missing)
-        /* [AI: GPT | 2026-0319 00:05:00 UTC
-         * [HUMAN: P.MEI | 2026-03-19 00:07:00 UTC]
-        */
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model->save($_POST);
-            $util->redirect_to('/admin/changelog');
-            return;
-        }
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            $this->require_csrf();
+            $action = trim((string) ($_POST['action'] ?? ''));
+            if (!in_array($action, self::ADMIN_ACTIONS, true)) {
+                http_response_code(400);
+                $this->error_page('Invalid Changelog module action.');
+            }
 
-        // THEN handle edit/view logic
-        $action = $params[1] ?? null;
-        $id     = $params[2] ?? null;
-        /*[END AI;GPT] */
+            $id = $this->validId($_POST['id'] ?? null);
+            if ($action === 'delete') {
+                if ($id === null) {
+                    $this->invalidRecord();
+                }
+                $model->deleteUpdate($id);
+            } else {
+                $model->saveUpdate($this->validatedUpdate($_POST), $id);
+            }
 
-        $data['edit_item'] = null;
-
-        if ($action === 'edit' && $id) {
-            $data['edit_item'] = $model->get_by_id((int)$id);
-        }
-
-        if ($action === 'delete' && $id) {
-            $model->remove((int)$id);
-            header("Location: /admin/changelog");
+            header('Location: /admin/changelog');
             exit;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model->save($_POST);
-            header("Location: /admin/changelog");
-            exit;
+        $action = (string) ($params[1] ?? $params[0] ?? '');
+        $rawId = $params[2] ?? $params[1] ?? null;
+        $editItem = null;
+        if ($action === 'edit') {
+            $id = $this->validId($rawId);
+            if ($id === null || !is_array($editItem = $model->getById($id))) {
+                $this->invalidRecord();
+            }
         }
 
-        $data['items'] = $model->get_all_updates();
-        $this->view('admin/changelog', $data);
+        $this->view('admin/index', [
+            'edit_item' => $editItem,
+            'items' => $model->getAllUpdates(),
+        ]);
+    }
+
+    private function validatedUpdate(array $input): array
+    {
+        $version = trim((string) ($input['version'] ?? ''));
+        $description = trim((string) ($input['description'] ?? ''));
+        $category = strtolower(trim((string) ($input['category'] ?? 'maintenance')));
+        $date = trim((string) ($input['date_released'] ?? ''));
+        $categories = ['maintenance', 'feature', 'fix', 'security', 'release', 'development'];
+        if ($version === '' || strlen($version) > 20 || $description === '' || !in_array($category, $categories, true)) {
+            http_response_code(422);
+            $this->error_page('Enter a valid version, category, and description.');
+        }
+
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+            http_response_code(422);
+            $this->error_page('Enter a valid release date.');
+        }
+
+        return compact('version', 'category', 'description') + ['date_released' => $date];
+    }
+
+    private function validId($value): ?int
+    {
+        $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        return $id === false || $id === null ? null : (int) $id;
+    }
+
+    private function invalidRecord(): void
+    {
+        http_response_code(400);
+        $this->error_page('Invalid Changelog record.');
     }
 }
+/* [End AI:GPT-5.6] */

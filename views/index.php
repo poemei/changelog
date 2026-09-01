@@ -1,4 +1,7 @@
-<?php require APPROOT . '/views/inc/head.php';?>
+<?php
+/* [AI:GPT-5.6 | 2026-09-01 05:00:00 UTC] */
+require APPROOT . '/views/inc/head.php';
+?>
 
 <div class="container">
     <h1>MVC Project Changelog</h1>
@@ -24,3 +27,4 @@
 </div>
 
 <?php require APPROOT . '/views/inc/foot.php'; ?>
+<?php /* [End AI:GPT-5.6] */ ?>
