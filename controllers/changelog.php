@@ -40,11 +40,10 @@ final class changelog extends controller
             exit;
         }
 
-        $action = (string) ($params[1] ?? $params[0] ?? '');
-        $rawId = $params[2] ?? $params[1] ?? null;
         $editItem = null;
-        if ($action === 'edit') {
-            $id = $this->validId($rawId);
+        $editOffset = array_search('edit', $params, true);
+        if ($editOffset !== false) {
+            $id = $this->validId($params[$editOffset + 1] ?? null);
             if ($id === null || !is_array($editItem = $model->getById($id))) {
                 $this->invalidRecord();
             }
